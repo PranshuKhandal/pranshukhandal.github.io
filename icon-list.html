@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
 <center><script type="text/javascript">
-const arr = [
+var arr = [
   "3d_rotation",
   "ac_unit",
   "access_alarm",
@@ -934,7 +934,5 @@ const arr = [
   "zoom_out",
   "zoom_out_map"
 ];
-
-const elm = val => `<pre><i style="font-size:30px">${val}</i><pre><i class="material-icons" style="font-size:200px">${val}</i><br/><br/><hr noshade width="$100%"/>`;
-arr.forEach(a => document.write(elm(a)));
+arr.forEach(a => document.write("<pre><i style=\"font-size:30px\">" + a + "</i><pre><i class=\"material-icons\" style=\"font-size:200px\">" + a + "</i><br/><br/><hr noshade width=\"100%\"/>"));
 </script></center>
