@@ -936,7 +936,5 @@ const arr = [
 ];
 
 const elm = val => `<pre><i style="font-size:30px">${val}</i><pre><i class="material-icons" style="font-size:200px">${val}</i><br/><br/><hr noshade width="$100%"/>`;
-Promise.resolve(arr).then(arr => {
-  for (let a of arr) document.write(elm(a));
-}).catch(window.alert);
-</script></cente>
+arr.forEach(a => document.write(elm(a)));
+</script></center>
