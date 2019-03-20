@@ -2,13 +2,154 @@
 <html>
   <head>
     <title>PranshuKhandal</title>
+    <style>
+
+body {
+  margin: 0;
+  font-family: Montserrat;
+}
+#bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: -1;
+}
+#logo {
+  display: block;
+  box-shadow: 0 0 10px 2px white;
+  border-radius: 50%;
+  width: 100px;
+  margin: 100px 0 50px 0 ;
+}
+#main {
+  display: block;
+  background-color: white;
+  margin: 100px 20px;
+}
+#elm {
+  position: relative;
+  font-size: 40px;
+  font-family: 'Ubuntu Mono', monospace;
+  color: black;
+  height: 40px;
+}
+#bottom {
+  color: white;
+  font-size: 35px;
+}
+@media only screen and (max-width: 600px) {
+  img#bg {
+    width: 600px;
+    margin: 0 calc(50vw - 300px);
+  }
+}
+
+    </style>
   </head>
   <body>
-    <h1>PranshuKhandal</h1>
-    <p>Hello dear! Thanx for visiting the site.</p>
-    <p>But, this site is incomplete for now.</p>
-    <p>It will be completed as soon as my exam ends.</p>
-    <p>Plz return after Apr 2, 2019.</p>
-    <p>made with ♥ by PranshuKhandal</p>
+    <img id="bg" src="https://i.imgur.com/Nc7GWff.jpg">
+    <center>
+      <img id="logo" src="https://i.imgur.com/NZ2GIK5.jpg">
+      <span id="elm">PranshuKhandal</span>
+      <div id="main">
+        <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
+      </div>
+      <span id="bottom">made with ♥ by PranshuKhandal</span>
+    </center>
+    <script>
+
+(function(){
+  
+  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+  
+  // ——————————————————————————————————————————————————
+  // TextScramble
+  // ——————————————————————————————————————————————————
+
+  class TextScramble {
+    constructor(el) {
+      this.el = el;
+      this.chars = '!<>-_\\/[]{}—=+*^?#________';
+      this.update = this.update.bind(this);
+    }
+    setText(newText) {
+      const oldText = this.el.innerText;
+      const length = Math.max(oldText.length, newText.length);
+      const promise = new Promise(resolve => this.resolve = resolve);
+      this.queue = [];
+      for (let i = 0; i < length; i++) {
+        const from = oldText[i] || '';
+        const to = newText[i] || '';
+        const start = Math.floor(Math.random() * 40);
+        const end = start + Math.floor(Math.random() * 40);
+        this.queue.push({ from, to, start, end });
+      }
+      cancelAnimationFrame(this.frameRequest);
+      this.frame = 0;
+      this.update();
+      return promise;
+    }
+    update() {
+      let output = '';
+      let complete = 0;
+      for (let i = 0, n = this.queue.length; i < n; i++) {
+        let { from, to, start, end, char } = this.queue[i];
+        if (this.frame >= end) {
+          complete++;
+          output += to;
+        } else if (this.frame >= start) {
+          if (!char || Math.random() < 0.28) {
+            char = this.randomChar();
+            this.queue[i].char = char;
+          }
+          output += `<span class="dud">${char}</span>`;
+        } else {
+          output += from;
+        }
+      }
+      this.el.innerHTML = output;
+      if (complete === this.queue.length) {
+        this.resolve();
+      } else {
+        this.frameRequest = requestAnimationFrame(this.update);
+        this.frame++;
+      }
+    }
+    randomChar() {
+      return this.chars[Math.floor(Math.random() * this.chars.length)];
+    }}
+
+
+  // ——————————————————————————————————————————————————
+  // Example
+  // ——————————————————————————————————————————————————
+
+  const phrases = [
+    'PranshuKhandal',
+    'Coder',
+    'WebDeveloper',
+    'JavaScript',
+    'Css3',
+    'HTML5',
+    'ReactJS'
+  ];
+
+
+  const el = document.querySelector('#elm');
+  const fx = new TextScramble(el);
+  let counter = 1;
+  const next = () => {
+    fx.setText(phrases[counter]).then(() => {
+      setTimeout(next, 1500);
+    });
+    counter = (counter + 1) % phrases.length;
+  };
+
+  window.onload = () => delay(1500).then(next);
+}());
+
+    </script>
   </body>
 </html>
