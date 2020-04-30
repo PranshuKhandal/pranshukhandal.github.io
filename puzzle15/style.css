@@ -1,0 +1,75 @@
+:root {
+    --game-len: 4;
+    --game-size: 70px;
+    --gap-size: 20px;
+    --border-len: calc( var( --gap-size ) / 4 );
+    --game-border-radius: 10px;
+}
+
+body {
+    margin: 0;
+}
+h1 {
+    margin: 20px 0 50px 0;
+    text-align: center;
+    font-size: 70px;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+#game {
+    margin: auto;
+    margin-bottom: 50px;
+    display: block;
+    width: calc( var( --game-size ) * var( --game-len ) + var( --gap-size ) * var( --game-len ) + var( --gap-size ) );
+    height: calc( var( --game-size ) * var( --game-len ) + var( --gap-size ) * var( --game-len ) + var( --gap-size ) );
+    border-radius: calc( 2 * var( --game-border-radius ) );
+    border: var( --border-len ) solid black;
+    background-color: blueviolet;
+}
+#game ul {
+    list-style-type: none;
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+#game li {
+    position: absolute;
+    cursor: pointer;
+    width: var( --game-size );
+    height: var( --game-size );
+    border: var( --border-len ) solid black;
+    border-radius: var( --game-border-radius );
+    text-align: center;
+    vertical-align: middle;
+    line-height: var( --game-size );
+    transition: left 0.4s ease-out, top 0.4s ease-out;
+    font-family: cursive;
+    font-size: calc( 0.8 * var( --game-size ) );
+    background-color: burlywood;
+}
+[ data-left = "0" ] {
+    left: calc( (1 - 0.25) * var( --gap-size ) + 0 * var( --game-size ));
+}
+[ data-left = "1" ] {
+    left: calc( (2 - 0.25) * var( --gap-size ) + 1 * var( --game-size ));
+}
+[ data-left = "2" ] {
+    left: calc( (3 - 0.25) * var( --gap-size ) + 2 * var( --game-size ));
+}
+[ data-left = "3" ] {
+    left: calc( (4 - 0.25) * var( --gap-size ) + 3 * var( --game-size ));
+}
+[ data-top = "0" ] {
+    top: calc( (1 - 0.25) * var( --gap-size ) + 0 * var( --game-size ));
+}
+[ data-top = "1" ] {
+    top: calc( (2 - 0.25) * var( --gap-size ) + 1 * var( --game-size ));
+}
+[ data-top = "2" ] {
+    top: calc( (3 - 0.25) * var( --gap-size ) + 2 * var( --game-size ));
+}
+[ data-top = "3" ] {
+    top: calc( (4 - 0.25) * var( --gap-size ) + 3 * var( --game-size ));
+}
