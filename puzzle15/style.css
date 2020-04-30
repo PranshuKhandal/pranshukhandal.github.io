@@ -1,3 +1,19 @@
+@import url( "https://fonts.googleapis.com/css?family=Dancing+Script&display=swap&effect=anaglyph" );
+@import url( "https://fonts.googleapis.com/icon?family=Material+Icons" );
+
+.anaglyph{
+    animation: anaglyph 2s ease infinite alternate;
+}
+
+@keyframes anaglyph {
+    0% {
+        text-shadow: -0.06em 0 red, 0.06em 0 cyan;
+    }
+    100% {
+        text-shadow: -0.04em 0 red, 0.04em 0 cyan;
+    }
+}
+
 :root {
     --game-len: 4;
     --game-size: 70px;
@@ -8,12 +24,13 @@
 
 body {
     margin: 0;
+    user-select: none;
 }
 h1 {
     margin: 20px 0 50px 0;
     text-align: center;
     font-size: 70px;
-    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-family: 'Dancing Script', serif;
 }
 #game {
     margin: auto;
@@ -45,7 +62,7 @@ h1 {
     vertical-align: middle;
     line-height: var( --game-size );
     transition: left 0.4s ease-out, top 0.4s ease-out;
-    font-family: cursive;
+    font-family: 'Dancing Script', serif;
     font-size: calc( 0.8 * var( --game-size ) );
     background-color: burlywood;
 }
@@ -72,4 +89,35 @@ h1 {
 }
 [ data-top = "3" ] {
     top: calc( (4 - 0.25) * var( --gap-size ) + 3 * var( --game-size ));
+}
+
+#bottom-bar {
+    display: block;
+    position: fixed;
+    bottom: 25px;
+    left: 0;
+    right: 0;
+    height: 50px;
+}
+#bottom-bar ul {
+    list-style: none;
+    display: flex;
+    width: calc( 8 * var( --game-size ) );
+    height: 50px;
+    border-radius: 50px;
+    box-shadow: 0 1px 6px 0 rgba( 32, 33, 36, .28 );
+    margin: auto;
+    padding: 0;
+}
+#bottom-bar li {
+    font-family: 'Dancing Script', sans-serif;
+    font-size: 40px;
+    line-height: 50px;
+    vertical-align: middle;
+    margin: 0 auto;
+}
+#bottom-bar a.material-icons {
+    cursor: pointer;
+    font-size: 40px;
+    line-height: 50px;
 }
