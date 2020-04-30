@@ -1,5 +1,7 @@
-const solve = (function(){
+(function(){
     const delay = (ms: number) => new Promise( res => setTimeout( res, ms ) );
+
+    const movesElement: HTMLSpanElement = document.querySelector( "#moves-value" );
 
     const game: {
         board?: Element,
@@ -9,13 +11,17 @@ const solve = (function(){
         idealState: string,
         favState: string,
         zeroPosition: position,
-        isChecking: boolean
+        isChecking: boolean,
+        moves: number,
+        states: string[]
     } = {
         state: "123456789ABCDEF0",
         idealState: "1234 5678 9ABC DEF0",
         favState: "5A08 BF92 1CD7 463E",
         zeroPosition: { left: 3, top: 3 },
-        isChecking: true
+        isChecking: true,
+        moves: 0,
+        states: []
     };
 
     function drawGame(): void {
@@ -55,6 +61,16 @@ const solve = (function(){
             if ( !toMove || n < 0 || n > 15 ) return;
             clicked( parseInt( game.state.charAt( n ), 16 ) );
         } );
+
+        document.querySelector( "#button-undo" ).addEventListener( "click", undo );
+        document.querySelector( "#button-home" ).addEventListener( "click", solve );
+        document.querySelector( "#button-shuffle" ).addEventListener( "click", () => {
+            game.moves = 0;
+            game.states = [];
+            movesElement.textContent = `${ game.moves }`;
+            writeState( game.favState );
+        } );
+        document.querySelector( "#button-help" ).addEventListener( "click", () => alert( "Why the fuck are you asking me? Just Google it man!" ) );
     }
 
     function createListItem( pos: number ): HTMLLIElement {
@@ -86,7 +102,8 @@ const solve = (function(){
         const x = z < n ? position : "0";
         const y = z > n ? position : "0";
         state = state.substring( a, b ) + x + state.substring( b + 1, c ) + y + state.substring( c + 1, d );
-        writeState( state );
+        writeState( state, true );
+        movesElement.textContent = `${ ++ game.moves }`;
     }
 
     function calcPosition( pos: number ): position {
@@ -99,8 +116,9 @@ const solve = (function(){
         item.setAttribute( "data-top", `${ position.top }` );
     }
 
-    function writeState( state: string ): void {
+    function writeState( state: string, callFromOutside?: boolean ): void {
         let pos = 0;
+        if ( callFromOutside && game.state.length == 16 ) game.states.push( game.state );
         game.state = removeSpaces( state );
         state.split( "" ).forEach( key => {
             !~"0 ".indexOf( key ) && setPosition( game.listItems[ parseInt( key, 16 ) - 1 ], pos ++ );
@@ -121,10 +139,16 @@ const solve = (function(){
         game.isChecking = true;
     }
 
+    function undo() {
+        if ( !game.states.length ) return;
+        writeState( game.states.pop() );
+        movesElement.textContent = `${ -- game.moves }`;
+    }
+
     drawGame();
     setTimeout( () => writeState( game.favState ), 2000 );
 
-    return function() {
+    function solve() {
         game.isChecking = false;
         writeState( game.idealState );
     }
