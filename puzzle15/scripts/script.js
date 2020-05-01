@@ -63,17 +63,23 @@ const game = (function () {
     };
     const buttonActions = {
         undo: function () {
+            if (!game.isCapturing)
+                return;
             if (!game.states.length)
                 return;
             writeState(game.states.pop());
             writeMoves();
         },
         home: function () {
+            if (!game.isCapturing)
+                return;
             game.isChecking = false;
             writeState(game.idealState);
             gameStoped();
         },
         shuffle: function () {
+            if (!game.isCapturing)
+                return;
             gameStoped();
             writeState(p15.genRandom());
             game.isCapturing = true;
@@ -199,7 +205,7 @@ Best time: ${Math.floor(time / 60)}m ${time % 60}s`);
         if (game.isChecking && game.state === "123456789ABCDEF0") {
             let moves = (+window.localStorage.getItem("p15: moves")) || 0;
             let time = (+window.localStorage.getItem("p15: time")) || 0;
-            window.localStorage.setItem("p15: moves", `${Math.min(moves, game.states.length) || game.states.length}`);
+            window.localStorage.setItem("p15: moves", `${Math.min(moves, game.states.length - 1) || game.states.length - 1}`);
             window.localStorage.setItem("p15: time", `${Math.min(time, game.timer.read()) || game.timer.read()}`);
             gameStoped();
             delay(500).then(() => alert("SOLVED!!"));
@@ -217,7 +223,7 @@ Best time: ${Math.floor(time / 60)}m ${time % 60}s`);
         game.isCapturing = false;
         game.isStarted = false;
         game.states = [];
-        game.timer.stop();
+        game.timer && game.timer.stop();
     }
     function writeTime(time) {
         document.querySelector("#min").textContent = `${Math.floor(time / 60)}`;
