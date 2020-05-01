@@ -38,6 +38,7 @@ const p15 = (function () {
 const game = (function () {
     const delay = (ms) => new Promise(res => setTimeout(res, ms));
     const elm = {
+        body: document.body,
         listItems: [],
         movesElement: document.querySelector("#moves-value"),
         min: document.querySelector("#min"),
@@ -78,10 +79,10 @@ const game = (function () {
             gameStoped();
         },
         shuffle: function () {
-            if (!game.isCapturing)
-                return;
             gameStoped();
+            elm.body.classList.toggle("slow", true);
             writeState(p15.genRandom());
+            delay(400).then(() => elm.body.classList.toggle("slow", false));
             game.isCapturing = true;
             writeMoves();
             writeTime(0);
@@ -138,7 +139,9 @@ Best time: ${Math.floor(time / 60)}m ${time % 60}s`);
         elm.buttons.info.addEventListener("click", buttonActions.info);
         elm.buttons.switch.addEventListener("click", () => toggle(null));
         window.setTimeout(() => {
+            elm.body.classList.toggle("slow", true);
             writeState(p15.genRandom());
+            delay(400).then(() => elm.body.classList.toggle("slow", false));
             game.isCapturing = true;
         }, 2000);
     }
@@ -208,7 +211,7 @@ Best time: ${Math.floor(time / 60)}m ${time % 60}s`);
             window.localStorage.setItem("p15: moves", `${Math.min(moves, game.states.length - 1) || game.states.length - 1}`);
             window.localStorage.setItem("p15: time", `${Math.min(time, game.timer.read()) || game.timer.read()}`);
             gameStoped();
-            delay(500).then(() => alert("SOLVED!!"));
+            delay(100).then(() => alert("SOLVED!!"));
         }
         game.isChecking = true;
     }
