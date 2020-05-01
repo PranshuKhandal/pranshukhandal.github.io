@@ -1,1 +1,0 @@
-type position = { left: number, top: number };
