@@ -13,6 +13,14 @@
         text-shadow: -0.04em 0 red, 0.04em 0 cyan;
     }
 }
+@keyframes fade-away {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
 
 :root {
     --game-len: 4;
@@ -20,27 +28,39 @@
     --gap-size: 20px;
     --border-len: calc( var( --gap-size ) / 4 );
     --game-border-radius: 10px;
+    --negative-margin: -360px;
 }
 
 body {
     margin: 0;
     user-select: none;
 }
+#title {
+    font-family: 'Dancing Script', cursive;
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 10px;
+    animation: fade-away 0.4s ease-out 4s forwards;
+}
+#title span {
+    font-size: 20px;
+}
 h1 {
-    margin: 20px 0 50px 0;
+    margin: 20px 10px 0;
     text-align: center;
     font-size: 70px;
     font-family: 'Dancing Script', serif;
 }
 #game {
     margin: auto;
-    margin-bottom: 50px;
+    margin-bottom: 100px;
     display: block;
     width: calc( var( --game-size ) * var( --game-len ) + var( --gap-size ) * var( --game-len ) + var( --gap-size ) );
     height: calc( var( --game-size ) * var( --game-len ) + var( --gap-size ) * var( --game-len ) + var( --gap-size ) );
     border-radius: calc( 2 * var( --game-border-radius ) );
     border: var( --border-len ) solid black;
     background-color: blueviolet;
+    transition: opacity 0.4s ease;
 }
 #game ul {
     list-style-type: none;
@@ -102,22 +122,49 @@ h1 {
 #bottom-bar ul {
     list-style: none;
     display: flex;
+    justify-content: space-evenly;
     width: 450px;
     height: 50px;
     border-radius: 50px;
     box-shadow: 0 1px 6px 0 rgba( 32, 33, 36, .28 );
     margin: auto;
     padding: 0;
+    overflow: hidden;
 }
 #bottom-bar li {
     font-family: 'Dancing Script', sans-serif;
     font-size: 40px;
     line-height: 50px;
     vertical-align: middle;
-    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    transition: margin 0.4s ease, width 0.4s ease;
 }
 #bottom-bar a.material-icons {
     cursor: pointer;
     font-size: 40px;
     line-height: 50px;
+    transition: transform 0.4s ease;
+}
+#bottom-bar ul:not( .closed ) #moves {
+    margin-left: var( --negative-margin );
+}
+#bottom-bar ul.closed #moves {
+    margin-left: 0;
+}
+#bottom-bar ul:not( .closed ) #button-info {
+    margin-right: 0;
+}
+#bottom-bar ul.closed #button-info {
+    margin-right: var( --negative-margin );
+}
+#bottom-bar ul:not( .closed ) #switch .material-icons {
+    transform: rotate( 0.5turn );
+}
+#bottom-bar li {
+    width: 90px;
+}
+#bottom-bar #moves, #bottom-bar #time {
+    width: 180px;
 }
