@@ -244,23 +244,54 @@ Best time: ${Math.floor(time / 60)}m ${time % 60}s`);
     drawGame();
     return { game };
 }());
-function createTimer(callback, ms) {
-    let times = 0;
-    let id = 0;
-    callback(0);
-    return {
-        play: function () {
-            id = window.setInterval(() => callback(++times), ms);
-        },
-        pause: function () {
-            window.clearInterval(id);
-        },
-        stop: function () {
-            window.clearInterval(id);
-            times = 0;
-        },
-        read: function () {
-            return times;
-        }
+const createTimer = (function () {
+    const timers = [];
+    window.addEventListener("blur", function () {
+        timers.forEach((arg) => {
+            if (arg[0].isPaused()) {
+                arg[1] = false;
+            }
+            else {
+                arg[0].pause();
+                arg[1] = true;
+            }
+        });
+    });
+    window.addEventListener("focus", function () {
+        timers.forEach((arg) => {
+            if (arg[1]) {
+                arg[0].play();
+                arg[1] = false;
+            }
+        });
+    });
+    return function (callback, ms) {
+        let times = 0;
+        let id = 0;
+        let isPaused = false;
+        callback(0);
+        const timer = {
+            play: function () {
+                id = window.setInterval(() => callback(++times), ms);
+                isPaused = false;
+            },
+            pause: function () {
+                window.clearInterval(id);
+                isPaused = true;
+            },
+            stop: function () {
+                window.clearInterval(id);
+                times = 0;
+                isPaused = true;
+            },
+            read: function () {
+                return times;
+            },
+            isPaused: function () {
+                return isPaused;
+            }
+        };
+        timers.push([timer, false]);
+        return timer;
     };
-}
+}());
