@@ -1,46 +1,145 @@
-(function(){
+type position = { left: number, top: number };
+type timer = { play: () => void, pause: () => void, stop: () => void, read: () => number };
+
+const p15 = (function(){
+    function countInversion( state: string ): number {
+        let array: number[] = state.split( "" ).map( key => parseInt( key, 16 ) );
+        let inversions: number = 0;
+        for ( let i: number = 0; i < array.length; ++ i ) {
+            for ( let j: number = i + 1; j < array.length; ++ j ) {
+                if ( array[ i ] && array[ j ] && array[ i ] > array[ j ] ) ++ inversions;
+            }
+        }
+        return inversions;
+    }
+
+    function getZeroPosition( state: string ): number {
+        state = removeSpaces( state );
+        return 4 - Math.floor( state.indexOf( "0" ) / 4 );
+    }
+
+    function removeSpaces( state: string ): string {
+        while ( ~state.indexOf( " " ) ) state = state.replace( " ", "" );
+        return state;
+    }
+
+    function isSolvable( state: string ): boolean {
+        return !!( ( countInversion( state ) + getZeroPosition( state ) ) % 2 );
+    }
+
+    function genRandom(): string {
+        let array: string[] = "123456789ABCDEF0".split( "" );
+        for ( let i: number = array.length - 1; i > 0; -- i ) {
+            let j: number = Math.floor( Math.random() * ( i + 1 ) );
+            [ array[ i ], array[ j ] ] = [ array[ j ], array[ i ] ];
+        }
+        let state: string = array.join( "" );
+        if ( isSolvable( state ) ) return state;
+        return genRandom();
+    }
+
+    return { isSolvable, genRandom };
+}());
+
+const game = (function(){
     const delay = (ms: number) => new Promise( res => setTimeout( res, ms ) );
 
-    const movesElement: HTMLSpanElement = document.querySelector( "#moves-value" );
-
-    const game: {
+    const elm: {
         board?: Element,
         ul?: HTMLUListElement,
-        listItems?: HTMLLIElement[],
+        listItems: HTMLLIElement[],
+        movesElement: HTMLSpanElement,
+        min: HTMLSpanElement,
+        sec: HTMLSpanElement,
+        bbul: Element,
+        buttons: {
+            switch: HTMLSpanElement,
+            undo: HTMLSpanElement,
+            home: HTMLSpanElement,
+            shuffle: HTMLSpanElement,
+            info: HTMLSpanElement
+        }
+    } = {
+        listItems: [],
+        movesElement: document.querySelector( "#moves-value" ),
+        min: document.querySelector( "#min" ),
+        sec: document.querySelector( "#min" ),
+        bbul: document.querySelector( "#bottom-bar ul" ),
+        buttons: {
+            switch: document.querySelector( "#switch" ),
+            undo: document.querySelector( "#button-undo" ),
+            home: document.querySelector( "#button-home" ),
+            shuffle: document.querySelector( "#button-shuffle" ),
+            info: document.querySelector( "#button-info" )
+        }
+    };
+
+    const game: {
         state: string,
         idealState: string,
         favState: string,
         zeroPosition: position,
+        states: string[],
+        timer?: timer,
         isChecking: boolean,
-        moves: number,
-        states: string[]
+        isCapturing: boolean,
+        isStarted: boolean
     } = {
         state: "123456789ABCDEF0",
         idealState: "1234 5678 9ABC DEF0",
         favState: "5A08 BF92 1CD7 463E",
         zeroPosition: { left: 3, top: 3 },
+        states: [],
         isChecking: true,
-        moves: 0,
-        states: []
+        isCapturing: false,
+        isStarted: false
+    };
+
+    const buttonActions = {
+        undo: function() {
+            if ( !game.states.length ) return;
+            writeState( game.states.pop() );
+            writeMoves();
+        },
+        home: function() {
+            game.isChecking = false;
+            writeState( game.idealState );
+            gameStoped();
+        },
+        shuffle: function() {
+            gameStoped();
+            writeState( p15.genRandom() );
+            game.isCapturing = true;
+            writeMoves();
+            writeTime( 0 );
+            toggle( true );
+        },
+        info: function() {
+            let moves: number = ( + window.localStorage.getItem("p15: moves") ) || 0;
+            let time: number = ( + window.localStorage.getItem("p15: time") ) || 0;
+            if ( moves && time ) {
+                alert( `Best moves: ${ moves }
+Best time: ${ Math.floor( time / 60 ) }m ${ time % 60 }s` );
+            } else {
+                alert( "Seems like you haven't completed any game yet. Try again after completing atleast one game." );
+            }
+        }
     };
 
     function drawGame(): void {
-        const board: Element = document.querySelector( "#game" );
-        const ul: HTMLUListElement = document.createElement( "ul" );
-        board.append( ul );
 
-        game.board = board;
-        game.ul = ul;
-        game.listItems = [];
+        elm.board = document.querySelector( "#game" );
+        elm.ul = document.createElement( "ul" );
+        elm.board.append( elm.ul );
 
-        for ( let i = 0; i < 15; ++ i ) {
-            let li = createListItem( i );
-            ul.append( li );
-            game.listItems.push( li );
+        for ( let i: number = 0; i < 15; ++ i ) {
+            let li: HTMLLIElement = createListItem( i );
+            elm.ul.append( li );
+            elm.listItems.push( li );
         }
 
         document.addEventListener( "keydown", function( event ) {
-            let toMove = 0;
+            let toMove: number = 0;
             switch ( event.keyCode ) {
                 case 39:
                     toMove = -1;
@@ -55,22 +154,23 @@
                     toMove = +4;
                     break;
             }
-            const z = game.state.indexOf( "0" );
+            const z: number = game.state.indexOf( "0" );
             if ( ( z % 4 == 0 && toMove === -1 ) || ( z % 4 == 3 && toMove === +1 ) ) return;
-            const n = z + toMove;
+            const n: number = z + toMove;
             if ( !toMove || n < 0 || n > 15 ) return;
             clicked( parseInt( game.state.charAt( n ), 16 ) );
         } );
 
-        document.querySelector( "#button-undo" ).addEventListener( "click", undo );
-        document.querySelector( "#button-home" ).addEventListener( "click", solve );
-        document.querySelector( "#button-shuffle" ).addEventListener( "click", () => {
-            game.moves = 0;
-            game.states = [];
-            movesElement.textContent = `${ game.moves }`;
-            writeState( game.favState );
-        } );
-        document.querySelector( "#button-help" ).addEventListener( "click", () => alert( "Why the fuck are you asking me? Just Google it man!" ) );
+        elm.buttons.undo.addEventListener( "click", buttonActions.undo );
+        elm.buttons.home.addEventListener( "click", buttonActions.home );
+        elm.buttons.shuffle.addEventListener( "click", buttonActions.shuffle );
+        elm.buttons.info.addEventListener( "click", buttonActions.info );
+        elm.buttons.switch.addEventListener( "click", () => toggle( null ) );
+        
+        window.setTimeout( () => {
+            writeState( p15.genRandom() );
+            game.isCapturing = true;
+        }, 2000 );
     }
 
     function createListItem( pos: number ): HTMLLIElement {
@@ -82,28 +182,30 @@
     }
 
     function isClickable( pos: number ): boolean {
-        const elm: HTMLLIElement = game.listItems[ pos - 1 ];
-        pos = Number( elm.dataset.left ) + 4 * Number( elm.dataset.top );
-        let diff = Math.abs( game.zeroPosition.left + 4 * game.zeroPosition.top - pos );
+        const li: HTMLLIElement = elm.listItems[ pos - 1 ];
+        pos = Number( li.dataset.left ) + 4 * Number( li.dataset.top );
+        let diff: number = Math.abs( game.zeroPosition.left + 4 * game.zeroPosition.top - pos );
         return diff === 4 || diff === 1;
     }
 
     function clicked( pos: number ): void {
-        if ( !isClickable( pos ) ) return;
-        let { state } = game;
+        toggle( true );
+        if ( !game.isCapturing || !isClickable( pos ) ) return;
+        if ( !game.isStarted ) gameStarted();
+        let { state }: { state: string } = game;
         state = state.toUpperCase();
-        const position = pos.toString( 16 ).toUpperCase();
-        const z = state.indexOf( "0" );
-        const n = state.indexOf( position );
-        const a = 0;
-        const b = Math.min( z, n );
-        const c = Math.max( z, n );
-        const d = state.length;
-        const x = z < n ? position : "0";
-        const y = z > n ? position : "0";
+        const position: string = pos.toString( 16 ).toUpperCase();
+        const z: number = state.indexOf( "0" );
+        const n: number = state.indexOf( position );
+        const a: number = 0;
+        const b: number = Math.min( z, n );
+        const c: number = Math.max( z, n );
+        const d: number = state.length;
+        const x: string = z < n ? position : "0";
+        const y: string = z > n ? position : "0";
         state = state.substring( a, b ) + x + state.substring( b + 1, c ) + y + state.substring( c + 1, d );
         writeState( state, true );
-        movesElement.textContent = `${ ++ game.moves }`;
+        if ( game.states.length ) writeMoves();
     }
 
     function calcPosition( pos: number ): position {
@@ -120,8 +222,8 @@
         let pos = 0;
         if ( callFromOutside && game.state.length == 16 ) game.states.push( game.state );
         game.state = removeSpaces( state );
-        state.split( "" ).forEach( key => {
-            !~"0 ".indexOf( key ) && setPosition( game.listItems[ parseInt( key, 16 ) - 1 ], pos ++ );
+        state.split( "" ).forEach( ( key: string ): void => {
+            !~"0 ".indexOf( key ) && setPosition( elm.listItems[ parseInt( key, 16 ) - 1 ], pos ++ );
             key === "0" && ( game.zeroPosition = calcPosition( pos ++ ) );
         } );
         amazinglySolved();
@@ -134,22 +236,68 @@
 
     function amazinglySolved() {
         if ( game.isChecking && game.state === "123456789ABCDEF0" ) {
-            alert( "SOLVED!!!" );
+            let moves: number = ( + window.localStorage.getItem("p15: moves") ) || 0;
+            let time: number = ( + window.localStorage.getItem("p15: time") ) || 0;
+            window.localStorage.setItem("p15: moves", `${ Math.min( moves, game.states.length ) || game.states.length }`);
+            window.localStorage.setItem("p15: time", `${ Math.min( time, game.timer.read() ) || game.timer.read() }`);
+            gameStoped();
+            delay(500).then( () => alert( "SOLVED!!" ) );
         }
         game.isChecking = true;
     }
 
-    function undo() {
-        if ( !game.states.length ) return;
-        writeState( game.states.pop() );
-        movesElement.textContent = `${ -- game.moves }`;
+    function gameStarted() {
+        if ( !game.isStarted ) {
+            game.timer = createTimer( writeTime, 1000 );
+            game.timer.play();
+            game.isStarted = true;
+        }
+    }
+
+    function gameStoped() {
+        game.isCapturing = false;
+        game.isStarted = false;
+        game.states = [];
+        game.timer.stop();
+    }
+
+    function writeTime( time: number ): void {
+        document.querySelector( "#min" ).textContent = `${ Math.floor(time / 60) }`;
+        document.querySelector( "#sec" ).textContent = `${ time % 60 }`;
+    }
+
+    function toggle( arg: boolean ): void {
+        if ( arg === null )
+            elm.bbul.classList.toggle( "closed" );
+        else
+            elm.bbul.classList.toggle( "closed", arg );
+    }
+
+    function writeMoves(): void {
+        elm.movesElement.textContent = `${ game.states.length }`;
     }
 
     drawGame();
-    setTimeout( () => writeState( game.favState ), 2000 );
-
-    function solve() {
-        game.isChecking = false;
-        writeState( game.idealState );
-    }
+    return { game };
 }());
+
+function createTimer( callback: (arg: number) => void, ms: number ): timer {
+    let times = 0;
+    let id = 0;
+    callback( 0 ); 
+    return {
+        play: function() {
+            id = window.setInterval( () => callback( ++ times ), ms );
+        },
+        pause: function() {
+            window.clearInterval( id );
+        },
+        stop: function() {
+            window.clearInterval( id );
+            times = 0;
+        },
+        read: function() {
+            return times;
+        }
+    };
+}
