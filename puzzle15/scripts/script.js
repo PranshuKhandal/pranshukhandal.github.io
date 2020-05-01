@@ -1,26 +1,106 @@
-(function () {
+const p15 = (function () {
+    function countInversion(state) {
+        let array = state.split("").map(key => parseInt(key, 16));
+        let inversions = 0;
+        for (let i = 0; i < array.length; ++i) {
+            for (let j = i + 1; j < array.length; ++j) {
+                if (array[i] && array[j] && array[i] > array[j])
+                    ++inversions;
+            }
+        }
+        return inversions;
+    }
+    function getZeroPosition(state) {
+        state = removeSpaces(state);
+        return 4 - Math.floor(state.indexOf("0") / 4);
+    }
+    function removeSpaces(state) {
+        while (~state.indexOf(" "))
+            state = state.replace(" ", "");
+        return state;
+    }
+    function isSolvable(state) {
+        return !!((countInversion(state) + getZeroPosition(state)) % 2);
+    }
+    function genRandom() {
+        let array = "123456789ABCDEF0".split("");
+        for (let i = array.length - 1; i > 0; --i) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        let state = array.join("");
+        if (isSolvable(state))
+            return state;
+        return genRandom();
+    }
+    return { isSolvable, genRandom };
+}());
+const game = (function () {
     const delay = (ms) => new Promise(res => setTimeout(res, ms));
-    const movesElement = document.querySelector("#moves-value");
+    const elm = {
+        listItems: [],
+        movesElement: document.querySelector("#moves-value"),
+        min: document.querySelector("#min"),
+        sec: document.querySelector("#min"),
+        bbul: document.querySelector("#bottom-bar ul"),
+        buttons: {
+            switch: document.querySelector("#switch"),
+            undo: document.querySelector("#button-undo"),
+            home: document.querySelector("#button-home"),
+            shuffle: document.querySelector("#button-shuffle"),
+            info: document.querySelector("#button-info")
+        }
+    };
     const game = {
         state: "123456789ABCDEF0",
         idealState: "1234 5678 9ABC DEF0",
         favState: "5A08 BF92 1CD7 463E",
         zeroPosition: { left: 3, top: 3 },
+        states: [],
         isChecking: true,
-        moves: 0,
-        states: []
+        isCapturing: false,
+        isStarted: false
+    };
+    const buttonActions = {
+        undo: function () {
+            if (!game.states.length)
+                return;
+            writeState(game.states.pop());
+            writeMoves();
+        },
+        home: function () {
+            game.isChecking = false;
+            writeState(game.idealState);
+            gameStoped();
+        },
+        shuffle: function () {
+            gameStoped();
+            writeState(p15.genRandom());
+            game.isCapturing = true;
+            writeMoves();
+            writeTime(0);
+            toggle(true);
+        },
+        info: function () {
+            let moves = (+window.localStorage.getItem("p15: moves")) || 0;
+            let time = (+window.localStorage.getItem("p15: time")) || 0;
+            if (moves && time) {
+                alert(`Best moves: ${moves}
+Best time: ${Math.floor(time / 60)}m ${time % 60}s`);
+            }
+            else {
+                alert("Seems like you haven't completed any game yet. Try again after completing atleast one game.");
+            }
+        }
     };
     function drawGame() {
-        const board = document.querySelector("#game");
-        const ul = document.createElement("ul");
-        board.append(ul);
-        game.board = board;
-        game.ul = ul;
-        game.listItems = [];
+        elm.board = document.querySelector("#game");
+        elm.ul = document.createElement("ul");
+        elm.board.append(elm.ul);
         for (let i = 0; i < 15; ++i) {
             let li = createListItem(i);
-            ul.append(li);
-            game.listItems.push(li);
+            elm.ul.append(li);
+            elm.listItems.push(li);
         }
         document.addEventListener("keydown", function (event) {
             let toMove = 0;
@@ -46,15 +126,15 @@
                 return;
             clicked(parseInt(game.state.charAt(n), 16));
         });
-        document.querySelector("#button-undo").addEventListener("click", undo);
-        document.querySelector("#button-home").addEventListener("click", solve);
-        document.querySelector("#button-shuffle").addEventListener("click", () => {
-            game.moves = 0;
-            game.states = [];
-            movesElement.textContent = `${game.moves}`;
-            writeState(game.favState);
-        });
-        document.querySelector("#button-help").addEventListener("click", () => alert("The fuck you're asking me, just use Google man!"));
+        elm.buttons.undo.addEventListener("click", buttonActions.undo);
+        elm.buttons.home.addEventListener("click", buttonActions.home);
+        elm.buttons.shuffle.addEventListener("click", buttonActions.shuffle);
+        elm.buttons.info.addEventListener("click", buttonActions.info);
+        elm.buttons.switch.addEventListener("click", () => toggle(null));
+        window.setTimeout(() => {
+            writeState(p15.genRandom());
+            game.isCapturing = true;
+        }, 2000);
     }
     function createListItem(pos) {
         const item = document.createElement("li");
@@ -64,14 +144,17 @@
         return item;
     }
     function isClickable(pos) {
-        const elm = game.listItems[pos - 1];
-        pos = Number(elm.dataset.left) + 4 * Number(elm.dataset.top);
+        const li = elm.listItems[pos - 1];
+        pos = Number(li.dataset.left) + 4 * Number(li.dataset.top);
         let diff = Math.abs(game.zeroPosition.left + 4 * game.zeroPosition.top - pos);
         return diff === 4 || diff === 1;
     }
     function clicked(pos) {
-        if (!isClickable(pos))
+        toggle(true);
+        if (!game.isCapturing || !isClickable(pos))
             return;
+        if (!game.isStarted)
+            gameStarted();
         let { state } = game;
         state = state.toUpperCase();
         const position = pos.toString(16).toUpperCase();
@@ -85,7 +168,8 @@
         const y = z > n ? position : "0";
         state = state.substring(a, b) + x + state.substring(b + 1, c) + y + state.substring(c + 1, d);
         writeState(state, true);
-        movesElement.textContent = `${++game.moves}`;
+        if (game.states.length)
+            writeMoves();
     }
     function calcPosition(pos) {
         return { left: pos % 4, top: Math.floor(pos / 4) % 4 };
@@ -100,8 +184,8 @@
         if (callFromOutside && game.state.length == 16)
             game.states.push(game.state);
         game.state = removeSpaces(state);
-        state.split("").forEach(key => {
-            !~"0 ".indexOf(key) && setPosition(game.listItems[parseInt(key, 16) - 1], pos++);
+        state.split("").forEach((key) => {
+            !~"0 ".indexOf(key) && setPosition(elm.listItems[parseInt(key, 16) - 1], pos++);
             key === "0" && (game.zeroPosition = calcPosition(pos++));
         });
         amazinglySolved();
@@ -113,20 +197,61 @@
     }
     function amazinglySolved() {
         if (game.isChecking && game.state === "123456789ABCDEF0") {
-            alert("SOLVED!!!");
+            let moves = (+window.localStorage.getItem("p15: moves")) || 0;
+            let time = (+window.localStorage.getItem("p15: time")) || 0;
+            window.localStorage.setItem("p15: moves", `${Math.min(moves, game.states.length) || game.states.length}`);
+            window.localStorage.setItem("p15: time", `${Math.min(time, game.timer.read()) || game.timer.read()}`);
+            gameStoped();
+            delay(500).then(() => alert("SOLVED!!"));
         }
         game.isChecking = true;
     }
-    function undo() {
-        if (!game.states.length)
-            return;
-        writeState(game.states.pop());
-        movesElement.textContent = `${--game.moves}`;
+    function gameStarted() {
+        if (!game.isStarted) {
+            game.timer = createTimer(writeTime, 1000);
+            game.timer.play();
+            game.isStarted = true;
+        }
+    }
+    function gameStoped() {
+        game.isCapturing = false;
+        game.isStarted = false;
+        game.states = [];
+        game.timer.stop();
+    }
+    function writeTime(time) {
+        document.querySelector("#min").textContent = `${Math.floor(time / 60)}`;
+        document.querySelector("#sec").textContent = `${time % 60}`;
+    }
+    function toggle(arg) {
+        if (arg === null)
+            elm.bbul.classList.toggle("closed");
+        else
+            elm.bbul.classList.toggle("closed", arg);
+    }
+    function writeMoves() {
+        elm.movesElement.textContent = `${game.states.length}`;
     }
     drawGame();
-    setTimeout(() => writeState(game.favState), 2000);
-    function solve() {
-        game.isChecking = false;
-        writeState(game.idealState);
-    }
+    return { game };
 }());
+function createTimer(callback, ms) {
+    let times = 0;
+    let id = 0;
+    callback(0);
+    return {
+        play: function () {
+            id = window.setInterval(() => callback(++times), ms);
+        },
+        pause: function () {
+            window.clearInterval(id);
+        },
+        stop: function () {
+            window.clearInterval(id);
+            times = 0;
+        },
+        read: function () {
+            return times;
+        }
+    };
+}
